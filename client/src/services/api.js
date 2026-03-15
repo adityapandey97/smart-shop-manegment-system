@@ -7,8 +7,23 @@
 import axios from "axios";
 
 // Create a customized axios instance
+// Auto-detects environment:
+// - localhost       → uses /api proxy (local dev)
+// - Vercel (live)   → uses Render backend URL directly
+const isLocalhost =
+  typeof window !== "undefined" &&
+  (window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1");
+
+// Your Render backend URL — hardcoded as safety fallback
+const RENDER_URL = "https://smart-shop-manegment-system.onrender.com";
+
+const API_BASE = isLocalhost
+  ? "/api"
+  : `${process.env.REACT_APP_API_URL || RENDER_URL}/api`;
+
 const api = axios.create({
-  baseURL: "/api", // Uses the proxy set in package.json
+  baseURL: API_BASE,
   headers: {
     "Content-Type": "application/json",
   },
