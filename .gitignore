@@ -1,0 +1,27 @@
+# Environment variables (NEVER commit these!)
+.env
+*.env
+
+# Node modules (reinstall with npm install)
+node_modules/
+client/node_modules/
+
+# React build output
+client/build/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+
+# Python
+ai-service/__pycache__/
+ai-service/*.pyc
+ai-service/venv/
