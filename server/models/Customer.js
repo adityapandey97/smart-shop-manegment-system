@@ -48,8 +48,6 @@ const customerSchema = new mongoose.Schema(
 
     // Notes about this customer
     notes: { type: String },
-  },
-  { timestamps: true }
     // Owner: which shop owner does this record belong to?
     // This ensures different shop owners never see each other's data
     owner: {
@@ -58,7 +56,8 @@ const customerSchema = new mongoose.Schema(
       required: true,
       index: true,  // index for fast filtering
     },
-
+  },
+  { timestamps: true }
 );
 
 // BUG FIX: Old pre-save hook overwrote riskLevel on EVERY save,
