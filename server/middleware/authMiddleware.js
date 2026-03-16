@@ -55,4 +55,7 @@ const managerOrOwner = (req, res, next) => {
   }
 };
 
-module.exports = { protect, ownerOnly, managerOrOwner };
+// Re-export setOwnerFilter so routes can import from one place
+const { setOwnerFilter } = require("./ownerMiddleware");
+
+module.exports = { protect, ownerOnly, managerOrOwner, setOwnerFilter };

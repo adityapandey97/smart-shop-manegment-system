@@ -54,11 +54,22 @@ const NewSaleModal = ({ onClose, onSaved }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (cartItems.length === 0) return toast.error("Add at least one product");
+
+    // BUG FIX 4: Validate that a customer is selected when payment mode is udhar
+    if (form.paymentMode === "udhar" && !form.customerId) {
+      return toast.error("Please select a customer for Udhar sales!");
+    }
+
     setSaving(true);
     try {
+      // Find selected customer name to send with the request
+      const selectedCustomer = customers.find((c) => c._id === form.customerId);
+
       await salesAPI.create({
         ...form,
+        customerName: selectedCustomer ? selectedCustomer.name : "Walk-in Customer",
         items: cartItems.map((i) => ({ productId: i.productId, quantity: i.quantity })),
+        // BUG FIX: Send explicit 0 for udhar, not undefined
         paidAmount: form.paymentMode === "udhar" ? 0 : afterDiscount,
         discount: Number(form.discount || 0),
       });
@@ -147,18 +158,26 @@ const NewSaleModal = ({ onClose, onSaved }) => {
             {/* Customer & Payment */}
             <div className="form-grid-2" style={{ marginTop: 16 }}>
               <div className="form-group">
-                <label className="form-label">Customer</label>
+                <label className="form-label">
+                  Customer
+                  {form.paymentMode === "udhar" && <span style={{ color: "var(--danger)", marginLeft: 4 }}>* required</span>}
+                </label>
                 <select
                   className="form-control"
                   value={form.customerId}
                   style={{ borderColor: form.paymentMode === "udhar" && !form.customerId ? "var(--danger)" : undefined }}
                   onChange={(e) => {
-                    const selectedCustomer = customers.find(c => c._id === e.target.value);
-                    setForm({ ...form, customerId: e.target.value, customerName: selectedCustomer ? selectedCustomer.name : "" });
+                    const selId = e.target.value;
+                    const selCust = customers.find((c) => c._id === selId);
+                    setForm({ ...form, customerId: selId, customerName: selCust ? selCust.name : "" });
                   }}
                 >
                   <option value="">Walk-in Customer</option>
-                  {customers.map((c) => <option key={c._id} value={c._id}>{c.name} {c.totalUdhar > 0 ? `(Udhar: ${rupee(c.totalUdhar)})` : ""}</option>)}
+                  {customers.map((c) => (
+                    <option key={c._id} value={c._id}>
+                      {c.name} — {c.phone}{c.totalUdhar > 0 ? ` (Pending: ${rupee(c.totalUdhar)})` : ""}{c.riskLevel === "high" ? " 🚨" : c.riskLevel === "medium" ? " ⚠️" : ""}
+                    </option>
+                  ))}
                 </select>
               </div>
               <div className="form-group">
@@ -185,7 +204,7 @@ const NewSaleModal = ({ onClose, onSaved }) => {
           </div>
           <div className="modal-footer">
             <button type="button" className="btn btn-ghost" onClick={onClose}>Cancel</button>
-            <button type="submit" className="btn btn-primary btn-lg" disabled={saving || cartItems.length === 0 || (form.paymentMode === "udhar" && !form.customerId)}>
+            <button type="submit" className="btn btn-primary btn-lg" disabled={saving || cartItems.length === 0}>
               {saving ? <><span className="spinner" /> Processing...</> : `Create Bill ${rupee(afterDiscount)}`}
             </button>
           </div>

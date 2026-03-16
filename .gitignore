@@ -1,27 +1,30 @@
-# Environment variables (NEVER commit these!)
+# Never commit these — they contain your passwords and secret keys
 .env
 *.env
+.env.local
+.env.production
 
-# Node modules (reinstall with npm install)
+# Node packages — reinstalled automatically
 node_modules/
 client/node_modules/
 
-# React build output
+# React production build — Vercel will build this automatically
 client/build/
 
 # Logs
 *.log
 npm-debug.log*
+yarn-debug.log*
 
 # OS files
 .DS_Store
 Thumbs.db
 
-# Editor
+# Editor files
 .vscode/
 .idea/
 
-# Python
+# Python AI service
 ai-service/__pycache__/
-ai-service/*.pyc
 ai-service/venv/
+ai-service/*.pyc

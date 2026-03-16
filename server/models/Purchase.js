@@ -66,6 +66,15 @@ const purchaseSchema = new mongoose.Schema(
     notes: { type: String },
 
     // Which staff entered this purchase
+    // Owner: which shop owner does this record belong to?
+    // This ensures different shop owners never see each other's data
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,  // index for fast filtering
+    },
+
     enteredBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

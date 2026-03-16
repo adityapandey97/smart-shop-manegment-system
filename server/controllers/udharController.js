@@ -1,73 +1,55 @@
 // ============================================
-//   Udhar Payment Controller
-//   Handles credit repayments from customers
+//   Udhar Controller — with owner isolation
 // ============================================
-
 const { UdharPayment } = require("../models/OtherModels");
 const Customer = require("../models/Customer");
 const Sale = require("../models/Sale");
 
-// ---- Record a Payment from Customer ----
-// POST /api/udhar/pay
 const recordPayment = async (req, res) => {
   try {
     const { customerId, saleId, paymentMode, notes } = req.body;
-
-    // **BUG FIX:** Convert paidAmount to Number — frontend sometimes sends a string
     const paidAmount = Number(req.body.paidAmount);
 
-    // Get customer to find current udhar balance
-    const customer = await Customer.findById(customerId);
-    if (!customer) {
-      return res.status(404).json({ success: false, message: "Customer not found." });
+    if (!paidAmount || paidAmount <= 0) {
+      return res.status(400).json({ success: false, message: "Payment amount must be greater than 0." });
     }
 
-    // Check payment is not more than what they owe
+    const customer = await Customer.findOne({ _id: customerId, owner: req.ownerId });
+    if (!customer) return res.status(404).json({ success: false, message: "Customer not found." });
+
     if (paidAmount > customer.totalUdhar) {
-      return res.status(400).json({
-        success: false,
-        message: `Customer only owes ₹${customer.totalUdhar}. Cannot accept ₹${paidAmount}.`,
-      });
+      return res.status(400).json({ success: false, message: `Customer only owes ₹${customer.totalUdhar}.` });
     }
 
-    const remainingBalance = customer.totalUdhar - paidAmount;
+    const remainingBalance = Math.max(0, customer.totalUdhar - paidAmount);
 
-    // Save the payment record
     const payment = await UdharPayment.create({
-      customerId,
-      saleId,
-      paidAmount,
-      remainingBalance,
-      paymentMode: paymentMode || "cash",
-      notes,
+      customerId, saleId, paidAmount, remainingBalance,
+      paymentMode: paymentMode || "cash", notes,
       recordedBy: req.user._id,
+      owner: req.ownerId,
     });
 
-    // Update customer balance + recalculate risk level
-    const updatedCustomer = await Customer.findById(customerId);
-    updatedCustomer.totalUdhar = Math.max(0, updatedCustomer.totalUdhar - paidAmount);
-    updatedCustomer.lastPaymentDate = new Date();
-    if (updatedCustomer.totalUdhar > 5000) updatedCustomer.riskLevel = "high";
-    else if (updatedCustomer.totalUdhar > 2000) updatedCustomer.riskLevel = "medium";
-    else updatedCustomer.riskLevel = "low";
-    await updatedCustomer.save();
+    customer.totalUdhar = remainingBalance;
+    customer.lastPaymentDate = new Date();
+    if (customer.totalUdhar > 5000) customer.riskLevel = "high";
+    else if (customer.totalUdhar > 2000) customer.riskLevel = "medium";
+    else customer.riskLevel = "low";
+    await customer.save();
 
-    // If a specific sale was paid, update it
     if (saleId) {
-      const sale = await Sale.findById(saleId);
+      const sale = await Sale.findOne({ _id: saleId, owner: req.ownerId });
       if (sale) {
         const newDue = Math.max(0, sale.dueAmount - paidAmount);
         await Sale.findByIdAndUpdate(saleId, {
-          dueAmount: newDue,
-          paidAmount: sale.paidAmount + paidAmount,
-          isPaid: newDue <= 0,
+          dueAmount: newDue, paidAmount: sale.paidAmount + paidAmount, isPaid: newDue <= 0,
         });
       }
     }
 
     res.status(201).json({
       success: true,
-      message: `Payment of ₹${paidAmount} recorded. Remaining balance: ₹${remainingBalance}`,
+      message: `Payment of ₹${paidAmount} recorded. Remaining: ₹${remainingBalance}`,
       data: payment,
     });
   } catch (error) {
@@ -75,35 +57,22 @@ const recordPayment = async (req, res) => {
   }
 };
 
-// ---- Get Payment History for a Customer ----
-// GET /api/udhar/history/:customerId
 const getPaymentHistory = async (req, res) => {
   try {
-    const payments = await UdharPayment.find({ customerId: req.params.customerId })
-      .populate("recordedBy", "name")
-      .sort({ paymentDate: -1 });
-
+    const payments = await UdharPayment.find({ customerId: req.params.customerId, owner: req.ownerId })
+      .populate("recordedBy", "name").sort({ paymentDate: -1 });
     res.json({ success: true, count: payments.length, data: payments });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// ---- Get All Pending Udhars ----
-// GET /api/udhar/pending
 const getAllPendingUdhars = async (req, res) => {
   try {
-    const customers = await Customer.find({ totalUdhar: { $gt: 0 }, isActive: true })
+    const customers = await Customer.find({ totalUdhar: { $gt: 0 }, isActive: true, owner: req.ownerId })
       .sort({ totalUdhar: -1 });
-
     const totalPending = customers.reduce((sum, c) => sum + c.totalUdhar, 0);
-
-    res.json({
-      success: true,
-      totalPending,
-      count: customers.length,
-      data: customers,
-    });
+    res.json({ success: true, totalPending, count: customers.length, data: customers });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }

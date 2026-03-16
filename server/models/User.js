@@ -55,6 +55,15 @@ const userSchema = new mongoose.Schema(
       default: true,
     },
 
+    // For Manager/Staff: which Owner's shop do they belong to?
+    // Set this when owner creates a staff account
+    // Owner accounts leave this blank (they are the owner)
+    shopOwnerId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      default: null,
+    },
+
     // Last time this user logged in
     lastLogin: {
       type: Date,

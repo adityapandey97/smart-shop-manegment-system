@@ -111,6 +111,15 @@ const productSchema = new mongoose.Schema(
     barcode: {
       type: String,
     },
+    // Owner: which shop owner does this record belong to?
+    // This ensures different shop owners never see each other's data
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,  // index for fast filtering
+    },
+
   },
   {
     timestamps: true,

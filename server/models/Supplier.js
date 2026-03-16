@@ -26,6 +26,15 @@ const supplierSchema = new mongoose.Schema(
     // Rating 1-5 for this supplier
     rating: { type: Number, min: 1, max: 5, default: 3 },
   },
+    // Owner: which shop owner does this record belong to?
+    // This ensures different shop owners never see each other's data
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,  // index for fast filtering
+    },
+
   { timestamps: true }
 );
 

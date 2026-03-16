@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const { createPurchase, getPurchases } = require("../controllers/purchaseController");
-const { protect, managerOrOwner } = require("../middleware/authMiddleware");
+const { protect, setOwnerFilter, managerOrOwner } = require("../middleware/authMiddleware");
 
-router.route("/").get(protect, getPurchases).post(protect, managerOrOwner, createPurchase);
+router.route("/").get(protect, setOwnerFilter, getPurchases).post(protect, setOwnerFilter, managerOrOwner, createPurchase);
 
 module.exports = router;

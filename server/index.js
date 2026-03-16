@@ -20,7 +20,19 @@ const app = express();
 // Allow frontend to talk to backend (CORS)
 app.use(
   cors({
-    origin: process.env.CLIENT_URL || "http://localhost:3000",
+    // Allow both local dev and deployed Vercel frontend
+    origin: function (origin, callback) {
+      const allowed = [
+        "http://localhost:3000",
+        process.env.CLIENT_URL,  // your Vercel URL e.g. https://smartshop.vercel.app
+      ].filter(Boolean);
+      // Allow requests with no origin (Postman, mobile apps)
+      if (!origin || allowed.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
   })
 );
@@ -30,6 +42,7 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // ---- Import All Route Files ----
+const { setOwnerFilter } = require("./middleware/ownerMiddleware");
 const authRoutes = require("./routes/authRoutes");
 const productRoutes = require("./routes/productRoutes");
 const supplierRoutes = require("./routes/supplierRoutes");

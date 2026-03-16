@@ -27,7 +27,7 @@ const customerSchema = new mongoose.Schema(
     },
 
     // Risk level for giving udhar
-    // Low = pays on time, High = often delays
+    // low = safe, medium = caution, high = do not give more udhar
     riskLevel: {
       type: String,
       enum: ["low", "medium", "high"],
@@ -50,6 +50,15 @@ const customerSchema = new mongoose.Schema(
     notes: { type: String },
   },
   { timestamps: true }
+    // Owner: which shop owner does this record belong to?
+    // This ensures different shop owners never see each other's data
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,  // index for fast filtering
+    },
+
 );
 
 // BUG FIX: Old pre-save hook overwrote riskLevel on EVERY save,

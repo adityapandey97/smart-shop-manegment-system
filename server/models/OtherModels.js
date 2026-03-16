@@ -54,6 +54,13 @@ const udharPaymentSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
+    // Owner: which shop owner this record belongs to
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
   },
   { timestamps: true }
 );
@@ -103,6 +110,13 @@ const priceHistorySchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
     },
+    // Owner: which shop owner this record belongs to
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
   },
   { timestamps: true }
 );
@@ -151,6 +165,14 @@ const expenseSchema = new mongoose.Schema(
 
     // Receipt image URL (optional)
     receiptUrl: { type: String },
+
+    // Owner: which shop owner this expense belongs to
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,
+    },
 
     // Who added this expense
     addedBy: {

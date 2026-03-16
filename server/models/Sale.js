@@ -98,6 +98,15 @@ const saleSchema = new mongoose.Schema(
     notes: { type: String },
   },
   { timestamps: true }
+    // Owner: which shop owner does this record belong to?
+    // This ensures different shop owners never see each other's data
+    owner: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+      index: true,  // index for fast filtering
+    },
+
 );
 
 // Auto-generate bill number before saving
