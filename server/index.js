@@ -24,12 +24,22 @@ app.use(
     origin: function (origin, callback) {
       const allowed = [
         "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5000",
+        "http://127.0.0.1:5000",
         process.env.CLIENT_URL,  // your Vercel URL e.g. https://smartshop.vercel.app
       ].filter(Boolean);
-      // Allow requests with no origin (Postman, mobile apps)
-      if (!origin || allowed.includes(origin)) {
+      
+      const isLocal = origin && (
+        origin.startsWith("http://localhost:") || 
+        origin.startsWith("http://127.0.0.1:")
+      );
+
+      // Allow requests with no origin (Postman, mobile apps) or allowed origins or local development
+      if (!origin || allowed.includes(origin) || isLocal) {
         callback(null, true);
       } else {
+        console.warn(`Blocked by CORS: ${origin}`);
         callback(new Error("Not allowed by CORS"));
       }
     },

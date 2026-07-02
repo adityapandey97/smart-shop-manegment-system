@@ -27,7 +27,21 @@ const registerUser = async (req, res) => {
       return res.status(400).json({ success: false, message: "User with this email already exists." });
     }
 
-    const user = await User.create({ name, email, password, role: role || "staff", phone });
+    // Determine role and shopOwnerId
+    const userRole = role || "staff";
+    let shopOwnerId = null;
+
+    if (userRole !== "owner") {
+      // For managers/staff, find the first owner to assign as shop owner
+      const firstOwner = await User.findOne({ role: "owner" }).sort({ createdAt: 1 });
+      if (firstOwner) {
+        shopOwnerId = firstOwner._id;
+      } else {
+        return res.status(400).json({ success: false, message: "No owner account exists. Please register an owner first." });
+      }
+    }
+
+    const user = await User.create({ name, email, password, role: userRole, phone, shopOwnerId });
 
     res.status(201).json({
       success: true,
@@ -140,7 +154,14 @@ const updateProfile = async (req, res) => {
 // GET /api/auth/users
 const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find({}).select("-password").sort({ createdAt: -1 });
+    // Owners can only see users in their shop: themselves (if owner) and staff/managers they own
+    const filter = {
+      $or: [
+        { role: "owner", _id: req.user._id }, // themselves if they're owner
+        { shopOwnerId: req.user._id } // staff/managers they own
+      ]
+    };
+    const users = await User.find(filter).select("-password").sort({ createdAt: -1 });
     res.json({ success: true, count: users.length, data: users });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

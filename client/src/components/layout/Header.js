@@ -1,6 +1,6 @@
 // ============================================
 //   Header Component
-//   Top bar with title, dark mode, language toggle
+//   Top bar with title, search, and quick actions
 // ============================================
 
 import React from "react";
@@ -13,72 +13,38 @@ const Header = ({ title, onMenuClick }) => {
 
   return (
     <header className="header">
-      {/* Left: Hamburger + Page Title */}
       <div className="header-left">
-        {/* Mobile menu toggle */}
-        <button className="icon-btn" onClick={onMenuClick} title="Menu" style={{ display: "none" }}>
+        <button className="icon-btn menu-toggle" onClick={onMenuClick} title="Toggle menu">
           ☰
         </button>
-        <h2 className="page-title">{title}</h2>
+        <div>
+          <p className="page-label">Dashboard</p>
+          <h2 className="page-title">{title}</h2>
+        </div>
       </div>
 
-      {/* Right: Controls */}
+      <div className="header-center">
+        <div className="search-box">
+          <span className="search-icon">🔍</span>
+          <input className="search-input" placeholder="Search orders, products, customers..." />
+        </div>
+      </div>
+
       <div className="header-right">
-        {/* Language Toggle: English / Hindi */}
-        <button
-          className="btn btn-ghost btn-sm"
-          onClick={toggleLanguage}
-          title="Switch Language"
-          style={{ fontWeight: 700, minWidth: 56 }}
-        >
-          {language === "en" ? "🇮🇳 हिंदी" : "🇬🇧 English"}
+        <button className="btn btn-ghost btn-sm" onClick={toggleLanguage} title="Switch language">
+          {language === "en" ? "हिंदी" : "English"}
         </button>
 
-        {/* Dark / Light Mode Toggle */}
-        <button
-          className="icon-btn"
-          onClick={toggleTheme}
-          title={theme === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode"}
-          style={{ fontSize: 20 }}
-        >
+        <button className="icon-btn" onClick={toggleTheme} title={theme === "dark" ? "Light mode" : "Dark mode"}>
           {theme === "dark" ? "☀️" : "🌙"}
         </button>
 
-        {/* Notification Bell (placeholder) */}
-        <button className="icon-btn" title="Notifications" style={{ position: "relative" }}>
+        <button className="icon-btn notification-btn" title="Notifications">
           🔔
-          <span
-            style={{
-              position: "absolute",
-              top: 6,
-              right: 6,
-              width: 8,
-              height: 8,
-              background: "#dc2626",
-              borderRadius: "50%",
-              border: "2px solid var(--bg-header)",
-            }}
-          />
+          <span className="notification-dot" />
         </button>
 
-        {/* User Avatar */}
-        <div
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: "50%",
-            background: "linear-gradient(135deg, #2563eb, #7c3aed)",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "#fff",
-            fontWeight: 700,
-            fontSize: 14,
-            cursor: "pointer",
-            boxShadow: "0 2px 8px rgba(37, 99, 235, 0.3)",
-          }}
-          title={user?.name}
-        >
+        <div className="user-avatar" title={user?.name}>
           {user?.name?.charAt(0).toUpperCase()}
         </div>
       </div>

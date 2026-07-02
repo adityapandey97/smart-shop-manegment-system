@@ -18,9 +18,11 @@ const isLocalhost =
 // Your Render backend URL — hardcoded as safety fallback
 const RENDER_URL = "https://smart-shop-manegment-system.onrender.com";
 
-const API_BASE = isLocalhost
-  ? "/api"
-  : `${process.env.REACT_APP_API_URL || RENDER_URL}/api`;
+const API_BASE = process.env.REACT_APP_API_URL
+  ? `${process.env.REACT_APP_API_URL}/api`
+  : isLocalhost
+    ? "http://localhost:5000/api"
+    : `${RENDER_URL}/api`;
 
 const api = axios.create({
   baseURL: API_BASE,
