@@ -5,16 +5,17 @@ import React, { useEffect, useState } from "react";
 import { BarChart, Bar, LineChart, Line, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import { reportAPI, expenseAPI } from "../services/api";
 import { useTheme } from "../context/ThemeContext";
+import { ReportsIcon, PricingIcon, ExpensesIcon, AIIcon, ProductsIcon } from "../components/layout/Icons";
 
 const rupee = (v) => `₹${Number(v || 0).toLocaleString("en-IN")}`;
-const COLORS = ["#2563eb", "#16a34a", "#d97706", "#dc2626", "#7c3aed", "#0891b2"];
+const COLORS = ["#4f46e5", "#10b981", "#f59e0b", "#ef4444", "#7c3aed", "#06b6d4"];
 
 const ReportsPage = () => {
   const [dashboard, setDashboard] = useState(null);
   const [profit, setProfit] = useState(null);
   const [loading, setLoading] = useState(true);
   const { isDark } = useTheme();
-  const gridColor = isDark ? "#334155" : "#e2e8f0";
+  const gridColor = isDark ? "#2d3748" : "#e2e8f0";
 
   useEffect(() => {
     Promise.all([reportAPI.getDashboard(), reportAPI.getProfit()])
@@ -31,13 +32,31 @@ const ReportsPage = () => {
 
   return (
     <div>
+      {/* Visual Header Banner */}
+      <div className="dashboard-banner" style={{
+        backgroundImage: "linear-gradient(to right, rgba(15, 23, 42, 0.95), rgba(99, 102, 241, 0.35)), url('https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&q=80&w=1000')",
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        padding: "48px 36px",
+        borderRadius: "var(--border-radius)",
+        color: "#fff",
+        marginBottom: "24px",
+        boxShadow: "var(--shadow-md)"
+      }}>
+        <span className="brand-pill" style={{ background: "rgba(255, 255, 255, 0.2)", color: "#fff", marginBottom: 12 }}>Analytics Suite</span>
+        <h1 style={{ fontFamily: "var(--font-display)", fontSize: 32, fontWeight: 800, margin: "6px 0 10px", letterSpacing: "-0.5px" }}>Business Reports & Analytics</h1>
+        <p style={{ fontSize: 14, color: "rgba(255,255,255,0.85)", maxWidth: 500, lineHeight: 1.6 }}>
+          Track profit margins, gross revenue growth, expense sheets, and product sales distributions dynamically.
+        </p>
+      </div>
+
       {/* Summary Cards */}
       <div className="stats-grid" style={{ marginBottom: 24 }}>
         {[
-          ["📊", "Monthly Revenue", rupee(dashboard?.month?.revenue), "blue"],
-          ["💹", "Gross Profit", rupee(dashboard?.month?.profit), "green"],
-          ["🧾", "Total Expenses", rupee(dashboard?.month?.expenses), "yellow"],
-          ["✅", "Net Profit", rupee(dashboard?.month?.netProfit), "green"],
+          [<ReportsIcon />, "Monthly Revenue", rupee(dashboard?.month?.revenue), "blue"],
+          [<PricingIcon />, "Gross Profit", rupee(dashboard?.month?.profit), "green"],
+          [<ExpensesIcon />, "Total Expenses", rupee(dashboard?.month?.expenses), "yellow"],
+          [<AIIcon />, "Net Profit", rupee(dashboard?.month?.netProfit), "green"],
         ].map(([icon, label, val, color]) => (
           <div key={label} className="stat-card"><div className={`stat-icon ${color}`}>{icon}</div>
             <div className="stat-info"><div className="stat-label">{label}</div><div className="stat-value">{val}</div></div>
@@ -91,10 +110,17 @@ const ReportsPage = () => {
 
       {/* Top Products Table */}
       <div className="card">
-        <div className="card-header"><span className="card-title">🏆 Top Products by Profit</span></div>
-        <div className="table-wrapper">
+        <div className="card-header">
+          <span className="card-title" style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <ProductsIcon /> Top Products by Profit
+          </span>
+        </div>
+        <div className="table-wrapper" style={{ overflowX: "auto" }}>
           {!profit?.productProfit?.length ? (
-            <div className="empty-state"><div className="empty-state-icon">📦</div><h3>No sales data yet</h3></div>
+            <div className="empty-state" style={{ padding: "48px 24px" }}>
+              <ProductsIcon style={{ width: 48, height: 48, strokeWidth: 1.5, marginBottom: 16, color: "var(--text-muted)" }} />
+              <h3>No sales data yet</h3>
+            </div>
           ) : (
             <table>
               <thead><tr><th>#</th><th>Product</th><th>Units Sold</th><th>Revenue</th><th>Total Profit</th><th>Avg Margin</th></tr></thead>

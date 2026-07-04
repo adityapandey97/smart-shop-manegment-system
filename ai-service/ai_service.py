@@ -230,8 +230,6 @@ def business_insights():
 @app.route("/health", methods=["GET"])
 def health():
     return jsonify({"status": "SmartShop AI Service is running! 🤖", "port": 5001})
-
-
 if __name__ == "__main__":
-    print("🤖 SmartShop AI Service starting on port 5001...")
+    print("[AI-Service] Starting Flask server on port 5001...")
     app.run(host="0.0.0.0", port=5001, debug=True)

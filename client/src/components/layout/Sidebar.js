@@ -7,23 +7,28 @@ import React from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
 import { useTheme } from "../../context/ThemeContext";
+import { 
+  DashboardIcon, ProductsIcon, SalesIcon, PurchasesIcon, 
+  SuppliersIcon, CustomersIcon, UdharIcon, ExpensesIcon, 
+  PricingIcon, ReportsIcon, SettingsIcon, LogoutIcon 
+} from "./Icons";
 
 const navItems = [
-  { label: "Dashboard", icon: "📊", path: "/" },
+  { label: "Dashboard", icon: <DashboardIcon />, path: "/" },
   { section: "Operations" },
-  { label: "Products", icon: "📦", path: "/products" },
-  { label: "Sales", icon: "🧾", path: "/sales" },
-  { label: "Purchases", icon: "🛒", path: "/purchases" },
-  { label: "Suppliers", icon: "🏭", path: "/suppliers" },
+  { label: "Products", icon: <ProductsIcon />, path: "/products" },
+  { label: "Sales", icon: <SalesIcon />, path: "/sales" },
+  { label: "Purchases", icon: <PurchasesIcon />, path: "/purchases" },
+  { label: "Suppliers", icon: <SuppliersIcon />, path: "/suppliers" },
   { section: "Finance" },
-  { label: "Customers", icon: "👥", path: "/customers" },
-  { label: "Udhar", icon: "💳", path: "/udhar" },
-  { label: "Expenses", icon: "💰", path: "/expenses" },
+  { label: "Customers", icon: <CustomersIcon />, path: "/customers" },
+  { label: "Udhar", icon: <UdharIcon />, path: "/udhar" },
+  { label: "Expenses", icon: <ExpensesIcon />, path: "/expenses" },
   { section: "Analytics" },
-  { label: "Pricing", icon: "🏷️", path: "/pricing" },
-  { label: "Reports", icon: "📈", path: "/reports" },
+  { label: "Pricing", icon: <PricingIcon />, path: "/pricing" },
+  { label: "Reports", icon: <ReportsIcon />, path: "/reports" },
   { section: "Account" },
-  { label: "Settings", icon: "⚙️", path: "/settings" },
+  { label: "Settings", icon: <SettingsIcon />, path: "/settings" },
 ];
 
 const Sidebar = ({ isOpen }) => {
@@ -75,7 +80,7 @@ const Sidebar = ({ isOpen }) => {
         })}
 
         <button className="nav-item logout-button" onClick={handleLogout}>
-          <span className="nav-icon">🚪</span>
+          <span className="nav-icon"><LogoutIcon /></span>
           <span>{t("logout")}</span>
         </button>
       </nav>

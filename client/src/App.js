@@ -59,8 +59,8 @@ const AppShell = ({ children, path }) => {
   return (
     <div className="app-layout">
       <Sidebar isOpen={sidebarOpen} />
-      <div className="main-content">
-        <Header title={title} onMenuClick={() => setSidebarOpen(!sidebarOpen)} />
+      <div className="main-content" onClick={() => sidebarOpen && setSidebarOpen(false)}>
+        <Header title={title} onMenuClick={(e) => { e.stopPropagation(); setSidebarOpen(!sidebarOpen); }} />
         <main className="page-content">{children}</main>
       </div>
     </div>

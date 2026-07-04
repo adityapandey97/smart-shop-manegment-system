@@ -5,6 +5,7 @@ const Sale = require("../models/Sale");
 const Product = require("../models/Product");
 const Customer = require("../models/Customer");
 const { Expense } = require("../models/OtherModels");
+const axios = require("axios");
 
 const getDashboard = async (req, res) => {
   try {
@@ -95,4 +96,54 @@ const getProfitReport = async (req, res) => {
   }
 };
 
-module.exports = { getDashboard, getProfitReport };
+const getAIInsights = async (req, res) => {
+  try {
+    const owner = req.ownerId;
+    const today = new Date(); today.setHours(0, 0, 0, 0);
+    const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+    
+    // Get current month sales
+    const monthSales = await Sale.find({ owner, saleDate: { $gte: monthStart } });
+    const monthRevenue = monthSales.reduce((sum, s) => sum + s.totalAmount, 0);
+    const monthProfit = monthSales.reduce((sum, s) => sum + s.items.reduce((is, i) => is + (i.profit || 0), 0), 0);
+    
+    // Get current month expenses
+    const monthExpenses = await Expense.find({ owner, date: { $gte: monthStart } });
+    const totalExpenses = monthExpenses.reduce((sum, e) => sum + e.amount, 0);
+    
+    // Get previous month sales (approximate)
+    const prevMonthStart = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+    const prevMonthEnd = new Date(today.getFullYear(), today.getMonth(), 0);
+    const prevMonthSales = await Sale.find({ owner, saleDate: { $gte: prevMonthStart, $lte: prevMonthEnd } });
+    const prevMonthRevenue = prevMonthSales.reduce((sum, s) => sum + s.totalAmount, 0);
+
+    // Call Python Flask AI service
+    let insights = [];
+    try {
+      const aiResponse = await axios.post("http://localhost:5001/business-insights", {
+        monthRevenue,
+        monthProfit,
+        expenses: totalExpenses,
+        prevMonthRevenue: prevMonthRevenue || monthRevenue
+      });
+      insights = aiResponse.data.data.insights;
+    } catch (err) {
+      console.warn("Could not connect to Flask AI Service, using fallback insights.");
+      // Fallback insights
+      const netProfit = monthProfit - totalExpenses;
+      insights = [
+        `📊 Gross Profit: ₹${monthProfit.toLocaleString("en-IN")}`,
+        `🧾 Expenses: ₹${totalExpenses.toLocaleString("en-IN")}`,
+        netProfit >= 0 
+          ? `✅ Net Profit: ₹${netProfit.toLocaleString("en-IN")}. Keep it up!` 
+          : `⚠️ Loss of ₹${Math.abs(netProfit).toLocaleString("en-IN")} this month. Reduce expenses!`
+      ];
+    }
+
+    res.json({ success: true, data: insights });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+module.exports = { getDashboard, getProfitReport, getAIInsights };

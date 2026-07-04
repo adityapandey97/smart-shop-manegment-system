@@ -6,6 +6,8 @@
 import React, { useEffect, useState } from "react";
 import toast from "react-hot-toast";
 import { productAPI, supplierAPI } from "../services/api";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { ProductsIcon, PricingIcon, AlertIcon } from "../components/layout/Icons";
 
 const rupee = (v) => `₹${Number(v || 0).toLocaleString("en-IN")}`;
 
@@ -159,6 +161,82 @@ const ProductModal = ({ product, suppliers, onClose, onSaved }) => {
   );
 };
 
+// ---- AI Demand Forecast Modal ----
+const DemandForecastModal = ({ product, onClose }) => {
+  const [forecast, setForecast] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    productAPI.predictDemand(product._id)
+      .then(res => setForecast(res.data.data))
+      .catch(err => {
+        toast.error("Forecasting service down");
+        onClose();
+      })
+      .finally(() => setLoading(false));
+  }, [product]);
+
+  return (
+    <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="modal" style={{ maxWidth: 580 }}>
+        <div className="modal-header">
+          <h3 className="modal-title">🔮 AI Demand Forecasting</h3>
+          <button className="icon-btn" onClick={onClose}>✕</button>
+        </div>
+        {loading ? (
+          <div style={{ padding: 40, textAlign: "center" }}>
+            <div className="spinner spinner-primary" style={{ margin: "0 auto 16px" }} />
+            <p style={{ color: "var(--text-secondary)" }}>Running forecasting models...</p>
+          </div>
+        ) : (
+          <div className="modal-body">
+            <div className="alert alert-info" style={{ marginBottom: 20 }}>
+              Product: <strong>{product.productName}</strong> | Stock: <strong>{product.stockQuantity} {product.unit}s</strong>
+            </div>
+
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
+              <div style={{ background: "var(--bg-card)", padding: 12, borderRadius: 8, border: "1px solid var(--border)" }}>
+                <small style={{ color: "var(--text-muted)", display: "block" }}>Avg Daily Sales</small>
+                <strong style={{ fontSize: 18 }}>{forecast.avgDailySales} units</strong>
+              </div>
+              <div style={{ background: "var(--bg-card)", padding: 12, borderRadius: 8, border: "1px solid var(--border)" }}>
+                <small style={{ color: "var(--text-muted)", display: "block" }}>Days to Stockout</small>
+                <strong style={{ fontSize: 18, color: forecast.daysUntilStockout <= 7 ? "var(--danger)" : "var(--text-primary)" }}>
+                  {forecast.daysUntilStockout === 999 ? "∞ (No depletion)" : `${forecast.daysUntilStockout} days`}
+                </strong>
+              </div>
+            </div>
+
+            <div className="alert alert-success" style={{ marginBottom: 20, display: "flex", flexDirection: "column", gap: 4 }}>
+              <strong>🤖 AI Recommendation:</strong>
+              <span>{forecast.recommendation}</span>
+              {forecast.reorderQuantity > 0 && (
+                <span style={{ fontSize: 12, opacity: 0.95 }}>Suggested reorder size: <strong>{forecast.reorderQuantity}</strong> units.</span>
+              )}
+            </div>
+
+            <h4 style={{ fontSize: 13, fontWeight: 700, color: "var(--text-muted)", textTransform: "uppercase", letterSpacing: 1.1, marginBottom: 12 }}>
+              Predicted Demand (Next 7 Days)
+            </h4>
+            <ResponsiveContainer width="100%" height={180}>
+              <LineChart data={forecast.next7Days || []}>
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
+                <XAxis dataKey="date" tick={{ fontSize: 10, fill: "var(--text-muted)" }} />
+                <YAxis tick={{ fontSize: 10, fill: "var(--text-muted)" }} />
+                <Tooltip contentStyle={{ background: "var(--bg-card)", border: "1px solid var(--border)", fontSize: 11 }} />
+                <Line type="monotone" dataKey="predicted_quantity" name="Predicted Units" stroke="#7c3aed" strokeWidth={2.5} dot={{ r: 3 }} />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+        <div className="modal-footer">
+          <button className="btn btn-primary" onClick={onClose}>Done</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // ---- Main Products Page ----
 const ProductsPage = () => {
   const [products, setProducts] = useState([]);
@@ -168,6 +246,7 @@ const ProductsPage = () => {
   const [filter, setFilter] = useState("all"); // all | lowStock | deadStock
   const [showModal, setShowModal] = useState(false);
   const [editProduct, setEditProduct] = useState(null);
+  const [predictProduct, setPredictProduct] = useState(null);
 
   useEffect(() => {
     fetchAll();
@@ -209,17 +288,17 @@ const ProductsPage = () => {
   return (
     <div>
       {/* Top Bar */}
-      <div className="flex-between mb-4">
-        <div className="flex gap-2">
+      <div className="flex-between mb-4" style={{ flexWrap: "wrap", gap: 12 }}>
+        <div className="flex gap-2" style={{ flexWrap: "wrap", alignItems: "center" }}>
           <input
-            className="form-control" placeholder="🔍 Search products..."
+            className="form-control" placeholder="Search products..."
             value={search} onChange={(e) => setSearch(e.target.value)}
             style={{ width: 240 }}
           />
           {["all", "lowStock", "deadStock"].map((f) => (
             <button key={f} className={`btn ${filter === f ? "btn-primary" : "btn-ghost"} btn-sm`}
               onClick={() => setFilter(f)}>
-              {f === "all" ? "All" : f === "lowStock" ? "⚠️ Low Stock" : "🪦 Dead Stock"}
+              {f === "all" ? "All" : f === "lowStock" ? "Low Stock" : "Dead Stock"}
             </button>
           ))}
         </div>
@@ -230,12 +309,12 @@ const ProductsPage = () => {
 
       {/* Table */}
       <div className="card">
-        <div className="table-wrapper">
+        <div className="table-wrapper" style={{ overflowX: "auto" }}>
           {loading ? (
             <div className="loading-screen"><div className="spinner spinner-primary" /></div>
           ) : filtered.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-state-icon">📦</div>
+            <div className="empty-state" style={{ padding: "48px 24px" }}>
+              <ProductsIcon style={{ width: 48, height: 48, strokeWidth: 1.5, marginBottom: 16, color: "var(--text-muted)" }} />
               <h3>No products found</h3>
               <p>Add your first product to get started</p>
             </div>
@@ -283,8 +362,9 @@ const ProductsPage = () => {
                       </td>
                       <td>
                         <div className="flex gap-2">
-                          <button className="btn btn-ghost btn-sm" onClick={() => { setEditProduct(p); setShowModal(true); }}>✏️</button>
-                          <button className="btn btn-danger btn-sm" onClick={() => handleDelete(p._id, p.productName)}>🗑️</button>
+                          <button className="btn btn-ghost btn-sm" onClick={() => { setEditProduct(p); setShowModal(true); }} style={{ padding: "4px 8px" }}>Edit</button>
+                          <button className="btn btn-primary btn-sm" onClick={() => setPredictProduct(p)} style={{ padding: "4px 8px", background: "var(--primary-bg)", color: "var(--primary)", borderColor: "var(--primary)" }}>🔮 AI Predict</button>
+                          <button className="btn btn-danger btn-sm" onClick={() => handleDelete(p._id, p.productName)} style={{ padding: "4px 8px" }}>Delete</button>
                         </div>
                       </td>
                     </tr>
@@ -303,6 +383,13 @@ const ProductsPage = () => {
           suppliers={suppliers}
           onClose={() => setShowModal(false)}
           onSaved={fetchAll}
+        />
+      )}
+
+      {predictProduct && (
+        <DemandForecastModal
+          product={predictProduct}
+          onClose={() => setPredictProduct(null)}
         />
       )}
     </div>

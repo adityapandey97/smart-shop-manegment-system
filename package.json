@@ -7,7 +7,8 @@
     "start": "node server/index.js",
     "server": "nodemon server/index.js",
     "client": "npm start --prefix client",
-    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "ai": "python ai-service/ai_service.py",
+    "dev": "concurrently \"npm run server\" \"npm run client\" \"npm run ai\"",
     "build": "npm run build --prefix client",
     "install-all": "npm install && npm install --prefix client"
   },

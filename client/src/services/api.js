@@ -81,6 +81,7 @@ export const productAPI = {
   delete: (id) => api.delete(`/products/${id}`),
   getLowStock: () => api.get("/products/low-stock"),
   getDeadStock: () => api.get("/products/dead-stock"),
+  predictDemand: (id) => api.get(`/products/${id}/predict`),
 };
 
 // Suppliers
@@ -111,6 +112,7 @@ export const customerAPI = {
   create: (data) => api.post("/customers", data),
   update: (id, data) => api.put(`/customers/${id}`, data),
   getLedger: (id) => api.get(`/customers/${id}/ledger`),
+  analyzeRisk: (id) => api.get(`/customers/${id}/risk`),
 };
 
 // Udhar
@@ -118,6 +120,7 @@ export const udharAPI = {
   recordPayment: (data) => api.post("/udhar/pay", data),
   getHistory: (customerId) => api.get(`/udhar/history/${customerId}`),
   getPending: () => api.get("/udhar/pending"),
+  sendReminder: (data) => api.post("/udhar/reminder", data),
 };
 
 // Expenses
@@ -131,6 +134,7 @@ export const expenseAPI = {
 export const reportAPI = {
   getDashboard: () => api.get("/reports/dashboard"),
   getProfit: (params) => api.get("/reports/profit", { params }),
+  getAIInsights: () => api.get("/reports/ai-insights"),
 };
 
 // Pricing

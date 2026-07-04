@@ -1,8 +1,7 @@
-// ============================================
-//   Customer Controller — with owner isolation
-// ============================================
 const Customer = require("../models/Customer");
 const Sale = require("../models/Sale");
+const { UdharPayment } = require("../models/OtherModels");
+const axios = require("axios");
 
 const getCustomers = async (req, res) => {
   try {
@@ -50,4 +49,47 @@ const getCustomerLedger = async (req, res) => {
   }
 };
 
-module.exports = { getCustomers, createCustomer, updateCustomer, getCustomerLedger };
+const analyzeCustomerRisk = async (req, res) => {
+  try {
+    const owner = req.ownerId;
+    const customer = await Customer.findOne({ _id: req.params.id, owner });
+    if (!customer) {
+      return res.status(404).json({ success: false, message: "Customer not found." });
+    }
+
+    // Get total payments count
+    const payments = await UdharPayment.find({ customerId: customer._id, owner });
+    
+    // Call Python Flask AI service
+    let riskData;
+    try {
+      const aiResponse = await axios.post("http://localhost:5001/analyze-customer-risk", {
+        totalUdhar: customer.totalUdhar,
+        delayCount: customer.delayCount || 0,
+        daysSincePayment: customer.lastPaymentDate 
+          ? Math.floor((new Date() - new Date(customer.lastPaymentDate)) / (1000 * 60 * 60 * 24))
+          : 90, // default to 90 days if never paid
+        totalPayments: payments.length
+      });
+      riskData = aiResponse.data.data;
+    } catch (err) {
+      console.warn("Could not connect to Flask AI Service, using fallback risk scoring.");
+      // Fallback scoring in JS
+      const totalUdhar = customer.totalUdhar;
+      const risk = totalUdhar > 5000 ? "high" : totalUdhar > 2000 ? "medium" : "low";
+      riskData = {
+        riskScore: Math.min(100, Math.round(totalUdhar / 100)),
+        riskLevel: risk,
+        advice: risk === "high" 
+          ? "🚨 Do not give more udhar. Request immediate payment." 
+          : "✅ Safe to give udhar."
+      };
+    }
+
+    res.json({ success: true, data: riskData });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+module.exports = { getCustomers, createCustomer, updateCustomer, getCustomerLedger, analyzeCustomerRisk };
