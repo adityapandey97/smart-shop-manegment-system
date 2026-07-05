@@ -17,7 +17,7 @@ const LoginPage = () => {
 
   const [isRegister, setIsRegister] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({ name: "", email: "", password: "", role: "staff" });
+  const [form, setForm] = useState({ name: "", email: "", password: "", role: "staff", phone: "" });
 
   const handleChange = (e) => setForm({ ...form, [e.target.name]: e.target.value });
 
@@ -73,18 +73,32 @@ const LoginPage = () => {
 
           <form onSubmit={handleSubmit}>
             {isRegister && (
-              <div className="form-group">
-                <label className="form-label">Full name</label>
-                <input
-                  name="name"
-                  type="text"
-                  className="form-control"
-                  placeholder="e.g. Priya Sharma"
-                  value={form.name}
-                  onChange={handleChange}
-                  required={isRegister}
-                />
-              </div>
+              <>
+                <div className="form-group">
+                  <label className="form-label">Full name</label>
+                  <input
+                    name="name"
+                    type="text"
+                    className="form-control"
+                    placeholder="e.g. Priya Sharma"
+                    value={form.name}
+                    onChange={handleChange}
+                    required={isRegister}
+                  />
+                </div>
+                <div className="form-group">
+                  <label className="form-label">Phone number</label>
+                  <input
+                    name="phone"
+                    type="tel"
+                    className="form-control"
+                    placeholder="e.g. +91 9876543210"
+                    value={form.phone}
+                    onChange={handleChange}
+                    required={isRegister}
+                  />
+                </div>
+              </>
             )}
 
             <div className="form-group">

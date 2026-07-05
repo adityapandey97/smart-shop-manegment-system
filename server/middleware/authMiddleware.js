@@ -26,14 +26,14 @@ const protect = async (req, res, next) => {
       // Get the user data (without password) and attach to request
       req.user = await User.findById(decoded.id).select("-password");
 
-      next(); // Move to the next function (the actual route)
+      return next(); // Move to the next function (the actual route)
     } catch (error) {
-      res.status(401).json({ success: false, message: "Invalid or expired token. Please log in again." });
+      return res.status(401).json({ success: false, message: "Invalid or expired token. Please log in again." });
     }
   }
 
   if (!token) {
-    res.status(401).json({ success: false, message: "Not authorized. Please log in first." });
+    return res.status(401).json({ success: false, message: "Not authorized. Please log in first." });
   }
 };
 

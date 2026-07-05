@@ -117,7 +117,7 @@ const sendReminder = async (req, res) => {
         subject: `⚠️ Pending Payment Reminder - SmartShop`,
         text: `Dear ${customerName},\n\nThis is a friendly reminder that you have a pending payment of ₹${amountDue.toLocaleString("en-IN")} at SmartShop.\n\nPlease clear your balance as soon as possible.\n\nThank you,\nSmartShop Team`,
         html: `<div style="font-family: sans-serif; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px; max-width: 500px; background-color: #ffffff;">
-          <h2 style="color: #4f46e5; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; margin-top: 0;">Payment Reminder</h2>
+          <h2 style="color: #0f766e; border-bottom: 2px solid #f1f5f9; padding-bottom: 10px; margin-top: 0;">Payment Reminder</h2>
           <p>Dear <strong>${customerName}</strong>,</p>
           <p>This is a friendly reminder regarding your pending balance at SmartShop.</p>
           <div style="background: #fef2f2; border: 1px solid #fee2e2; padding: 20px; border-radius: 12px; margin: 20px 0; text-align: center;">

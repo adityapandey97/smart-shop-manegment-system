@@ -53,7 +53,10 @@ api.interceptors.response.use(
     // If token expired or invalid, log the user out
     if (error.response?.status === 401) {
       localStorage.removeItem("smartshop_user");
-      window.location.href = "/login"; // Redirect to login
+      // Only redirect if not already on the login page to avoid refresh loops on bad login attempts
+      if (window.location.pathname !== "/login") {
+        window.location.href = "/login";
+      }
     }
     return Promise.reject(error);
   }

@@ -9,10 +9,10 @@
 /* ---- CSS Variables (Light Mode) ---- */
 :root {
   /* Brand Colors */
-  --primary: #4f46e5;
-  --primary-light: #6366f1;
-  --primary-dark: #4338ca;
-  --primary-bg: rgba(79, 70, 229, 0.08);
+  --primary: #0f766e;
+  --primary-light: #14b8a6;
+  --primary-dark: #115e59;
+  --primary-bg: rgba(15, 118, 110, 0.08);
 
   /* Status Colors */
   --success: #10b981;
@@ -43,7 +43,7 @@
 
   /* Borders */
   --border: rgba(226, 232, 240, 0.8);
-  --border-focus: #4f46e5;
+  --border-focus: #0f766e;
 
   /* Shadows */
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.02), 0 1px 2px rgba(0,0,0,0.01);
@@ -80,13 +80,13 @@
   --text-muted: #64748b;
 
   --border: rgba(51, 65, 85, 0.4);
-  --border-focus: #6366f1;
+  --border-focus: #14b8a6;
 
   --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
   --shadow-md: 0 8px 30px rgba(0,0,0,0.35);
   --shadow-lg: 0 24px 60px rgba(0,0,0,0.5);
 
-  --primary-bg: rgba(99, 102, 241, 0.15);
+  --primary-bg: rgba(20, 184, 166, 0.15);
   --success-bg: rgba(16, 185, 129, 0.15);
   --warning-bg: rgba(245, 158, 11, 0.15);
   --danger-bg: rgba(239, 68, 68, 0.15);
@@ -206,7 +206,7 @@ body {
 .nav-item.active {
   background: var(--primary);
   color: #fff;
-  box-shadow: 0 4px 14px rgba(79, 70, 229, 0.35);
+  box-shadow: 0 4px 14px rgba(15, 118, 110, 0.3);
 }
 
 .nav-item .nav-icon {
@@ -356,7 +356,7 @@ body {
   width: 38px;
   height: 38px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -364,7 +364,7 @@ body {
   font-weight: 700;
   font-size: 14px;
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.3);
+  box-shadow: 0 2px 8px rgba(15, 118, 110, 0.25);
 }
 
 .notification-btn {
@@ -394,7 +394,7 @@ body {
   width: 42px;
   height: 42px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #2563eb, #7c3aed);
+  background: linear-gradient(135deg, var(--primary), var(--primary-light));
   display: flex;
   align-items: center;
   justify-content: center;
@@ -481,7 +481,7 @@ body {
 
 .auth-hero {
   padding: 56px 48px;
-  background-image: linear-gradient(135deg, rgba(79, 70, 229, 0.92) 0%, rgba(30, 27, 75, 0.95) 100%), url('./hero-bg.png');
+  background-image: linear-gradient(135deg, rgba(15, 118, 110, 0.92) 0%, rgba(13, 27, 42, 0.95) 100%), url('./hero-bg.png');
   background-size: cover;
   background-position: center;
   color: #fff;
@@ -787,13 +787,13 @@ body {
 .btn-primary {
   background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
   color: #fff;
-  box-shadow: 0 4px 14px 0 rgba(79, 70, 229, 0.35);
+  box-shadow: 0 4px 14px 0 rgba(15, 118, 110, 0.3);
 }
 
 .btn-primary:hover:not(:disabled) {
   background: linear-gradient(135deg, var(--primary-light) 0%, var(--primary) 100%);
   transform: translateY(-1.5px);
-  box-shadow: 0 6px 20px 0 rgba(79, 70, 229, 0.45);
+  box-shadow: 0 6px 20px 0 rgba(15, 118, 110, 0.4);
 }
 
 .btn-success {
@@ -873,7 +873,7 @@ body {
 
 .form-control:focus {
   border-color: var(--border-focus);
-  box-shadow: 0 0 0 4px rgba(79, 70, 229, 0.15);
+  box-shadow: 0 0 0 4px rgba(15, 118, 110, 0.15);
   background: var(--bg-card);
 }
 

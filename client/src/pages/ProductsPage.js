@@ -11,6 +11,33 @@ import { ProductsIcon, PricingIcon, AlertIcon } from "../components/layout/Icons
 
 const rupee = (v) => `₹${Number(v || 0).toLocaleString("en-IN")}`;
 
+const getProductImage = (productName, category, imageUrl) => {
+  if (imageUrl) return imageUrl;
+  
+  const cat = (category || "").toLowerCase();
+  const name = (productName || "").toLowerCase();
+  
+  if (cat.includes("dairy") || name.includes("milk") || name.includes("cheese") || name.includes("butter") || name.includes("paneer") || name.includes("curd") || name.includes("amul")) {
+    return "https://images.unsplash.com/photo-1550583724-b2692b85b150?auto=format&fit=crop&w=120&q=80";
+  }
+  if (cat.includes("snack") || cat.includes("chips") || name.includes("chips") || name.includes("kurkure") || name.includes("biscuit") || name.includes("namkeen") || name.includes("lays") || name.includes("snack")) {
+    return "https://images.unsplash.com/photo-1599490659213-e2b9527b0876?auto=format&fit=crop&w=120&q=80";
+  }
+  if (cat.includes("beverage") || cat.includes("drink") || name.includes("coke") || name.includes("pepsi") || name.includes("soda") || name.includes("juice") || name.includes("water") || name.includes("limca") || name.includes("sprite")) {
+    return "https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=120&q=80";
+  }
+  if (cat.includes("bakery") || name.includes("bread") || name.includes("cake") || name.includes("bun") || name.includes("toast") || name.includes("cookies")) {
+    return "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=120&q=80";
+  }
+  if (cat.includes("fruit") || cat.includes("veg") || name.includes("apple") || name.includes("banana") || name.includes("tomato") || name.includes("potato") || name.includes("onion")) {
+    return "https://images.unsplash.com/photo-1610832958506-ee5633613df2?auto=format&fit=crop&w=120&q=80";
+  }
+  if (cat.includes("personal") || cat.includes("care") || cat.includes("beauty") || name.includes("soap") || name.includes("shampoo") || name.includes("paste") || name.includes("brush")) {
+    return "https://images.unsplash.com/photo-1556228720-195a672e8a03?auto=format&fit=crop&w=120&q=80";
+  }
+  return "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=120&q=80";
+};
+
 // ---- Add/Edit Product Modal ----
 const ProductModal = ({ product, suppliers, onClose, onSaved }) => {
   const isEdit = !!product?._id;
@@ -27,6 +54,7 @@ const ProductModal = ({ product, suppliers, onClose, onSaved }) => {
     supplierId: product?.supplierId?._id || "",
     expiryDate: product?.expiryDate ? product.expiryDate.split("T")[0] : "",
     barcode: product?.barcode || "",
+    imageUrl: product?.imageUrl || "",
   });
   const [saving, setSaving] = useState(false);
 
@@ -137,6 +165,11 @@ const ProductModal = ({ product, suppliers, onClose, onSaved }) => {
                 <label className="form-label">Barcode</label>
                 <input name="barcode" className="form-control" placeholder="Optional"
                   value={form.barcode} onChange={handleChange} />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Product Image URL</label>
+                <input name="imageUrl" className="form-control" placeholder="Paste image URL (e.g. https://...)"
+                  value={form.imageUrl} onChange={handleChange} />
               </div>
             </div>
 
@@ -338,8 +371,17 @@ const ProductsPage = () => {
                   return (
                     <tr key={p._id}>
                       <td>
-                        <div style={{ fontWeight: 600 }}>{p.productName}</div>
-                        {p.sku && <div style={{ fontSize: 11, color: "var(--text-muted)" }}>SKU: {p.sku}</div>}
+                        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                          <img
+                            src={getProductImage(p.productName, p.category, p.imageUrl)}
+                            alt={p.productName}
+                            style={{ width: 40, height: 40, borderRadius: 8, objectFit: "cover", border: "1px solid var(--border)", flexShrink: 0 }}
+                          />
+                          <div>
+                            <div style={{ fontWeight: 600 }}>{p.productName}</div>
+                            {p.sku && <div style={{ fontSize: 11, color: "var(--text-muted)" }}>SKU: {p.sku}</div>}
+                          </div>
+                        </div>
                       </td>
                       <td><span className="badge badge-primary">{p.category}</span></td>
                       <td>
