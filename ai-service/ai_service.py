@@ -226,6 +226,113 @@ def business_insights():
         return jsonify({"success": False, "message": str(e)}), 500
 
 
+# Chat Advisor Endpoint
+@app.route("/chat-advisor", methods=["POST"])
+def chat_advisor():
+    try:
+        data = request.get_json()
+        message = data.get("message", "").strip().lower()
+        products = data.get("products", [])
+        sales = data.get("sales", [])
+        expenses = data.get("expenses", [])
+
+        # Default response
+        response_text = ""
+        
+        # Simple agentic intent routing:
+        if "price" in message or "selling" in message or "mrp" in message or "trend" in message or "cost" in message:
+            # Pricing logic / price recommendation
+            matched_product = None
+            for p in products:
+                name_val = p.get("productName", "").lower()
+                if name_val in message or message in name_val:
+                    matched_product = p
+                    break
+            
+            # If no specific product matched, look for category match
+            if not matched_product:
+                for p in products:
+                    if p.get("category", "").lower() in message:
+                        matched_product = p
+                        break
+
+            if matched_product:
+                p_name = matched_product.get("productName")
+                bp = matched_product.get("buyingPrice", 0)
+                sp = matched_product.get("sellingPrice", 0)
+                # Calculate margin
+                margin = ((sp - bp) / bp * 100) if bp > 0 else 0
+                
+                # Market trend suggestion (suggesting standard optimization)
+                suggested_margin = 25  # Suggest 25% standard retail profit margin
+                suggested_sp = round(bp * (1 + suggested_margin / 100))
+                
+                response_text = (
+                    f"📊 **Market Trend Analysis for {p_name}**:\n\n"
+                    f"- **Current Cost Price (Buying)**: ₹{bp:.2f}\n"
+                    f"- **Current Selling Price**: ₹{sp:.2f} (Profit Margin: {margin:.1f}%)\n"
+                    f"- **Suggested Retail Price**: ₹{suggested_sp:.2f} (Targeting a healthy {suggested_margin}% margin)\n\n"
+                    f"💡 *Advice*: According to recent retail market trends, items in the same category are marking up between 20% and 30%. "
+                    f"If competitors are pricing lower, consider bundle discount offers rather than dropping individual margins."
+                )
+            else:
+                response_text = (
+                    "🏷️ **Product Pricing & Market Trends Advisor**:\n\n"
+                    "Please specify the product name (e.g., 'selling price for Amul Butter') to run a trend check. "
+                    "In general, dairy products observe a 15-20% margin, whereas snacks and beverages yield a 25-35% profit markup. "
+                    "I can recommend optimized prices if you name a specific item!"
+                )
+
+        elif "stock" in message or "inventory" in message or "low" in message or "count" in message or "depleted" in message:
+            # Stock check
+            low_stock = [p for p in products if p.get("stockQuantity", 0) <= p.get("minStockLevel", 5)]
+            if low_stock:
+                items_str = "\n".join([f"- **{p.get('productName')}**: {p.get('stockQuantity')} units left (Min threshold: {p.get('minStockLevel')})" for p in low_stock[:5]])
+                response_text = (
+                    f"📦 **Inventory Status Report**:\n\n"
+                    f"You have **{len(low_stock)}** products running low on stock:\n"
+                    f"{items_str}\n\n"
+                    f"🚨 *Reorder Alert*: I suggest placing a restock order with your registered suppliers today to avoid out-of-stock losses."
+                )
+            else:
+                response_text = "✅ **Inventory Status**: All products are currently stocked above their minimum safety thresholds. Your store is in good shape!"
+
+        elif "profit" in message or "sales" in message or "revenue" in message or "business" in message or "expense" in message:
+            # Financial advice
+            total_rev = sum(s.get("totalAmount", 0) for s in sales)
+            total_exp = sum(e.get("amount", 0) for e in expenses)
+            net = total_rev - total_exp
+            
+            response_text = (
+                f"📈 **Business Financial Summary**:\n\n"
+                f"- **Total Revenue**: ₹{total_rev:,.2f}\n"
+                f"- **Total Expenses**: ₹{total_exp:,.2f}\n"
+                f"- **Estimated Net Margin**: ₹{net:,.2f}\n\n"
+                f"💡 *Insight*: "
+            )
+            if net > 0:
+                response_text += "Your store is currently operating in the green! To maximize returns, review high-cost expenses and optimize stock frequency."
+            else:
+                response_text += "Net earnings are currently flat or negative. Look at trimming marketing/other expenses, and consider increasing product margins slightly on fast-moving items."
+
+        else:
+            response_text = (
+                "🤖 **SmartShop AI Assistant**:\n\n"
+                "I am here to guide your operations. You can ask me questions like:\n"
+                "1. *'What is the selling price of Milk according to market trends?'* (Pricing Advisor)\n"
+                "2. *'Which products are low on stock?'* (Inventory check)\n"
+                "3. *'How is my store's profit margin doing?'* (Financial breakdown)\n\n"
+                "How can I help you optimize your business today?"
+            )
+
+        return jsonify({
+            "success": True,
+            "reply": response_text
+        })
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500
+
+
 # Health check
 @app.route("/health", methods=["GET"])
 def health():

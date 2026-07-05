@@ -146,4 +146,43 @@ const getAIInsights = async (req, res) => {
   }
 };
 
-module.exports = { getDashboard, getProfitReport, getAIInsights };
+const chatAssistant = async (req, res) => {
+  try {
+    const { message } = req.body;
+    const owner = req.ownerId;
+
+    // Fetch products, recent sales, and recent expenses for context
+    const [products, sales, expenses] = await Promise.all([
+      Product.find({ owner, isActive: true }).select("productName category buyingPrice sellingPrice stockQuantity minStockLevel"),
+      Sale.find({ owner }).sort({ saleDate: -1 }).limit(20).select("saleDate totalAmount items"),
+      Expense.find({ owner }).sort({ date: -1 }).limit(20).select("expenseType amount")
+    ]);
+
+    // Send query along with store details to Flask AI service
+    let reply = "";
+    try {
+      const aiResponse = await axios.post("http://localhost:5001/chat-advisor", {
+        message,
+        products,
+        sales,
+        expenses
+      });
+      reply = aiResponse.data.reply;
+    } catch (err) {
+      console.warn("Could not connect to Flask AI Service for chat advisor, using fallback response.");
+      reply = `🤖 **SmartShop AI Assistant (Offline)**:\n\n` +
+              `I'm currently unable to connect to the prediction engine. ` +
+              `However, looking at your store database:\n` +
+              `- You have **${products.length}** active products.\n` +
+              `- You recorded **${sales.length}** recent sales bills.\n` +
+              `- You recorded **${expenses.length}** recent expenses.\n\n` +
+              `Please verify the Flask AI service is running on port 5001 to restore smart price trend check capabilities!`;
+    }
+
+    res.json({ success: true, reply });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+module.exports = { getDashboard, getProfitReport, getAIInsights, chatAssistant };

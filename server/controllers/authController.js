@@ -5,6 +5,7 @@
 
 const jwt = require("jsonwebtoken");
 const User = require("../models/User");
+const Notification = require("../models/Notification");
 
 // ---- Helper: Generate JWT Token ----
 const generateToken = (userId) => {
@@ -15,11 +16,25 @@ const generateToken = (userId) => {
   );
 };
 
+// ---- Helper: Generate Unique 5-digit Store ID ----
+const generateStoreId = async () => {
+  let isUnique = false;
+  let code = "";
+  while (!isUnique) {
+    code = Math.floor(10000 + Math.random() * 90000).toString();
+    const existing = await User.findOne({ role: "owner", storeId: code });
+    if (!existing) {
+      isUnique = true;
+    }
+  }
+  return code;
+};
+
 // ---- Register New User ----
 // POST /api/auth/register
 const registerUser = async (req, res) => {
   try {
-    const { name, email, password, role, phone } = req.body;
+    const { name, email, password, role, phone, storeName, storeId } = req.body;
 
     // Check if email already exists
     const userExists = await User.findOne({ email });
@@ -30,22 +45,60 @@ const registerUser = async (req, res) => {
     // Determine role and shopOwnerId
     const userRole = role || "staff";
     let shopOwnerId = null;
+    let finalStoreId = "";
+    let finalStoreName = "";
+    let isActive = true;
 
-    if (userRole !== "owner") {
-      // For managers/staff, find the first owner to assign as shop owner
-      const firstOwner = await User.findOne({ role: "owner" }).sort({ createdAt: 1 });
-      if (firstOwner) {
-        shopOwnerId = firstOwner._id;
-      } else {
-        return res.status(400).json({ success: false, message: "No owner account exists. Please register an owner first." });
+    if (userRole === "owner") {
+      if (!storeName) {
+        return res.status(400).json({ success: false, message: "Store name is required for owners." });
       }
+      finalStoreName = storeName;
+      finalStoreId = await generateStoreId();
+      isActive = true;
+    } else {
+      if (!storeId) {
+        return res.status(400).json({ success: false, message: "Store ID is required for staff/managers." });
+      }
+      // Look up owner with this storeId
+      const owner = await User.findOne({ role: "owner", storeId });
+      if (!owner) {
+        return res.status(404).json({ success: false, message: `Store with ID ${storeId} not found. Please verify the ID.` });
+      }
+      shopOwnerId = owner._id;
+      finalStoreId = owner.storeId;
+      finalStoreName = owner.storeName;
+      isActive = false; // Must be approved by owner!
     }
 
-    const user = await User.create({ name, email, password, role: userRole, phone, shopOwnerId });
+    const user = await User.create({
+      name,
+      email,
+      password,
+      role: userRole,
+      phone,
+      shopOwnerId,
+      storeId: finalStoreId,
+      storeName: finalStoreName,
+      isActive
+    });
+
+    if (userRole !== "owner") {
+      // Create an admission request notification for the owner
+      await Notification.create({
+        ownerId: shopOwnerId,
+        title: "New Staff Admission Request",
+        message: `${name} wants to join your store '${finalStoreName}' as ${userRole}.`,
+        type: "staff_request",
+        staffId: user._id,
+      });
+    }
 
     res.status(201).json({
       success: true,
-      message: "Account created successfully!",
+      message: userRole === "owner" 
+        ? `Account created! Store unique ID is ${finalStoreId}.`
+        : "Registration request sent to store owner. Please wait for approval.",
       data: {
         _id: user._id,
         name: user.name,
@@ -53,7 +106,10 @@ const registerUser = async (req, res) => {
         role: user.role,
         phone: user.phone,
         avatar: user.avatar,
-        token: generateToken(user._id),
+        storeId: user.storeId,
+        storeName: user.storeName,
+        isActive: user.isActive,
+        token: userRole === "owner" ? generateToken(user._id) : undefined, // Only login owner immediately
       },
     });
   } catch (error) {
@@ -168,4 +224,77 @@ const getAllUsers = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, getProfile, updateProfile, getAllUsers };
+// ---- Search Store (Public) ----
+// GET /api/auth/search-store?query=...
+const searchStore = async (req, res) => {
+  try {
+    const { query } = req.query;
+    if (!query) {
+      return res.status(400).json({ success: false, message: "Search query is required." });
+    }
+    const owners = await User.find({
+      role: "owner",
+      storeName: { $regex: query, $options: "i" }
+    }).select("storeName storeId");
+
+    res.json({ success: true, count: owners.length, data: owners });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ---- Get Notifications (Protected) ----
+// GET /api/auth/notifications
+const getNotifications = async (req, res) => {
+  try {
+    // Return all notifications for the owner
+    const notifications = await Notification.find({ ownerId: req.ownerId })
+      .populate("staffId", "name email role phone")
+      .sort({ createdAt: -1 });
+
+    res.json({ success: true, count: notifications.length, data: notifications });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// ---- Resolve Notification (Approve/Reject Staff) ----
+// PUT /api/auth/notifications/:id/resolve
+const resolveNotification = async (req, res) => {
+  try {
+    const { action } = req.body; // 'approve' or 'reject'
+    const notification = await Notification.findOne({ _id: req.params.id, ownerId: req.ownerId });
+    if (!notification) {
+      return res.status(404).json({ success: false, message: "Notification not found." });
+    }
+
+    if (notification.type === "staff_request") {
+      if (action === "approve") {
+        await User.findByIdAndUpdate(notification.staffId, { isActive: true });
+        notification.message = `Approved: ${notification.message}`;
+      } else {
+        await User.findByIdAndDelete(notification.staffId);
+        notification.message = `Rejected and deleted: ${notification.message}`;
+      }
+    }
+
+    notification.isResolved = true;
+    notification.isRead = true;
+    await notification.save();
+
+    res.json({ success: true, message: `Staff request ${action === "approve" ? "approved" : "rejected"} successfully!` });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+module.exports = {
+  registerUser,
+  loginUser,
+  getProfile,
+  updateProfile,
+  getAllUsers,
+  searchStore,
+  getNotifications,
+  resolveNotification
+};

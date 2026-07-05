@@ -73,6 +73,9 @@ export const authAPI = {
   getProfile: () => api.get("/auth/profile"),
   updateProfile: (data) => api.put("/auth/profile", data),
   getAllUsers: () => api.get("/auth/users"),
+  searchStore: (query) => api.get("/auth/search-store", { params: { query } }),
+  getNotifications: () => api.get("/auth/notifications"),
+  resolveNotification: (id, action) => api.put(`/auth/notifications/${id}/resolve`, { action }),
 };
 
 // Products
@@ -138,6 +141,7 @@ export const reportAPI = {
   getDashboard: () => api.get("/reports/dashboard"),
   getProfit: (params) => api.get("/reports/profit", { params }),
   getAIInsights: () => api.get("/reports/ai-insights"),
+  chatAssistant: (message) => api.post("/reports/chat-assistant", { message }),
 };
 
 // Pricing

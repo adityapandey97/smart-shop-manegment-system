@@ -3,13 +3,46 @@
 //   Top bar with title, search, and quick actions
 // ============================================
 
-import React from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useTheme } from "../../context/ThemeContext";
 import { useAuth } from "../../context/AuthContext";
+import { authAPI } from "../../services/api";
+import toast from "react-hot-toast";
 
 const Header = ({ title, onMenuClick }) => {
   const { theme, toggleTheme, language, toggleLanguage } = useTheme();
   const { user } = useAuth();
+
+  const [notifications, setNotifications] = useState([]);
+  const [showNotifications, setShowNotifications] = useState(false);
+
+  const fetchNotifications = useCallback(async () => {
+    if (user?.role === "owner") {
+      try {
+        const res = await authAPI.getNotifications();
+        setNotifications(res.data.data);
+      } catch (err) {
+        console.error("Failed to load notifications", err);
+      }
+    }
+  }, [user]);
+
+  useEffect(() => {
+    fetchNotifications();
+    // Poll notifications every 30 seconds
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
+  }, [fetchNotifications]);
+
+  const handleResolveRequest = async (id, action) => {
+    try {
+      const res = await authAPI.resolveNotification(id, action);
+      toast.success(res.data.message);
+      fetchNotifications();
+    } catch (err) {
+      toast.error(err.response?.data?.message || err.message || "Failed to resolve request");
+    }
+  };
 
   return (
     <header className="header">
@@ -33,6 +66,12 @@ const Header = ({ title, onMenuClick }) => {
       </div>
 
       <div className="header-right">
+        {user?.storeId && (
+          <div style={{ marginRight: 8, fontSize: "13px", background: "var(--primary-bg)", color: "var(--primary)", padding: "6px 12px", borderRadius: "20px", fontWeight: "600" }}>
+            🏪 {user.storeName} <span style={{ fontSize: "11px", opacity: 0.8 }}>({user.storeId})</span>
+          </div>
+        )}
+
         <button className="btn btn-ghost btn-sm" onClick={toggleLanguage} title="Switch language" style={{ letterSpacing: 0.5 }}>
           {language === "en" ? "हिंदी" : "English"}
         </button>
@@ -45,10 +84,72 @@ const Header = ({ title, onMenuClick }) => {
           )}
         </button>
 
-        <button className="icon-btn notification-btn" title="Notifications">
-          <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
-          <span className="notification-dot" />
-        </button>
+        <div style={{ position: "relative" }}>
+          <button className="icon-btn notification-btn" title="Notifications" onClick={() => setShowNotifications(!showNotifications)}>
+            <svg width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" /></svg>
+            {notifications.filter(n => !n.isResolved).length > 0 && <span className="notification-dot" />}
+          </button>
+
+          {showNotifications && (
+            <div style={{
+              position: "absolute",
+              top: "100%",
+              right: 0,
+              marginTop: 12,
+              background: "var(--bg-card)",
+              border: "1px solid var(--border)",
+              borderRadius: 12,
+              boxShadow: "var(--shadow-lg)",
+              width: 320,
+              zIndex: 1000,
+              padding: "16px",
+              maxHeight: 400,
+              overflowY: "auto"
+            }}>
+              <div style={{ fontWeight: 700, borderBottom: "1px solid var(--border)", paddingBottom: 8, marginBottom: 8, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <span style={{ fontSize: "14px" }}>Store Notifications</span>
+                <span className="badge badge-primary" style={{ fontSize: "11px" }}>{notifications.length}</span>
+              </div>
+              {notifications.length === 0 ? (
+                <div style={{ padding: "20px 0", textAlign: "center", color: "var(--text-muted)" }}>
+                  No new notifications
+                </div>
+              ) : (
+                notifications.map((n) => (
+                  <div key={n._id} style={{
+                    padding: "10px 0",
+                    borderBottom: "1px solid var(--border)",
+                    fontSize: "13px"
+                  }}>
+                    <div style={{ fontWeight: 600, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                      <span>{n.title}</span>
+                      {!n.isResolved && <span style={{ width: 6, height: 6, background: "var(--danger)", borderRadius: "50%" }} />}
+                    </div>
+                    <p style={{ color: "var(--text-secondary)", fontSize: "12px", marginTop: 4, lineHeight: "1.4" }}>{n.message}</p>
+                    {n.type === "staff_request" && !n.isResolved && (
+                      <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                        <button
+                          className="btn btn-primary btn-sm"
+                          style={{ padding: "4px 8px", fontSize: "11px" }}
+                          onClick={() => handleResolveRequest(n._id, "approve")}
+                        >
+                          Admit
+                        </button>
+                        <button
+                          className="btn btn-ghost btn-sm"
+                          style={{ padding: "4px 8px", fontSize: "11px" }}
+                          onClick={() => handleResolveRequest(n._id, "reject")}
+                        >
+                          Decline
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+        </div>
 
         <div className="user-avatar" title={user?.name}>
           {user?.name?.charAt(0).toUpperCase()}

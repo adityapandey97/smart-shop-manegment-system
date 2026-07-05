@@ -5,6 +5,7 @@
 
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import toast from "react-hot-toast";
 import {
   LineChart, Line, BarChart, Bar, XAxis, YAxis,
   CartesianGrid, Tooltip, ResponsiveContainer, Legend
@@ -63,6 +64,7 @@ const DashboardPage = () => {
       setInsights(insightsRes.data.data);
     } catch (err) {
       console.error("Dashboard error:", err);
+      toast.error(err.response?.data?.message || err.message || "Failed to load dashboard statistics");
     } finally {
       setLoading(false);
     }
@@ -85,7 +87,7 @@ const DashboardPage = () => {
     <div>
       {/* Visual Header Banner */}
       <div className="dashboard-banner" style={{
-        backgroundImage: "linear-gradient(to right, rgba(15, 23, 42, 0.95), rgba(79, 70, 229, 0.4)), url('https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&q=80&w=1000')",
+        backgroundImage: "linear-gradient(to right, rgba(15, 23, 42, 0.95), rgba(15, 118, 110, 0.4)), url('https://images.unsplash.com/photo-1578916171728-46686eac8d58?auto=format&fit=crop&q=80&w=1000')",
         backgroundSize: "cover",
         backgroundPosition: "center",
         padding: "48px 36px",

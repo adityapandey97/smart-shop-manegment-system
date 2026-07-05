@@ -27,6 +27,7 @@ import ExpensesPage from "./pages/ExpensesPage";
 import ReportsPage from "./pages/ReportsPage";
 import PricingPage from "./pages/PricingPage";
 import SettingsPage from "./pages/SettingsPage";
+import Chatbot from "./components/AI/Chatbot";
 
 // Page title mapping
 const pageTitles = {
@@ -114,6 +115,7 @@ const App = () => {
       <AuthProvider>
         <Router>
           <AppRoutes />
+          <Chatbot />
           {/* Toast notifications */}
           <Toaster
             position="top-right"

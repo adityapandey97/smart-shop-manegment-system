@@ -292,7 +292,7 @@ const ProductsPage = () => {
       setProducts(pRes.data.data);
       setSuppliers(sRes.data.data);
     } catch (err) {
-      toast.error("Failed to load products");
+      toast.error(err.response?.data?.message || err.message || "Failed to load products");
     } finally {
       setLoading(false);
     }
@@ -305,7 +305,7 @@ const ProductsPage = () => {
       toast.success("Product removed");
       fetchAll();
     } catch (err) {
-      toast.error("Delete failed");
+      toast.error(err.response?.data?.message || err.message || "Delete failed");
     }
   };
 

@@ -64,6 +64,18 @@ const userSchema = new mongoose.Schema(
       default: null,
     },
 
+    // Store ID (5-digit unique ID generated for owner, copied for staff/managers)
+    storeId: {
+      type: String,
+      index: true,
+    },
+
+    // Store Name
+    storeName: {
+      type: String,
+      trim: true,
+    },
+
     // Last time this user logged in
     lastLogin: {
       type: Date,
